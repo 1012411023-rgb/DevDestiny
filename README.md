@@ -1,6 +1,6 @@
 # DevDestiny
 
-MindForge is an AI-powered visual quality inspection SaaS platform. It leverages advanced computer vision to automatically detect, assess, and report manufacturing defects by learning the visual profile of "good" products.
+DevDestiny is an AI-powered visual quality inspection SaaS platform. It leverages advanced computer vision to automatically detect, assess, and report manufacturing defects by learning the visual profile of "good" products.
 
 It employs a few-shot feature-extraction pipeline (via ResNet50 in PyTorch without heavy deep-learning training architectures) calculating Mahalanobis distances (PaDiM) per patch region to find and heat-map anomalies locally on the CPU.
 Then, it dynamically routes the visual heatmap output through the Grok API (x.ai) for concise context and a textual actionable inspection report.
