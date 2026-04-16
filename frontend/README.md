@@ -1,16 +1,34 @@
-# React + Vite
+﻿# DevDestiny Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the React + Vite frontend for the DevDestiny inspection platform. It provides the dashboard, file upload UI, and single-page application experience.
 
-Currently, two official plugins are available:
+## Local Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## React Compiler
+Then open the local Vite URL shown in the terminal, usually `http://127.0.0.1:5173`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Build for Production
 
-## Expanding the ESLint configuration
+```bash
+cd frontend
+npm run build
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The production build output is written to `frontend/dist/`.
+
+## Available Scripts
+
+- `npm run dev` — start the development server
+- `npm run build` — build production assets
+- `npm run preview` — preview the production build locally
+- `npm run lint` — run ESLint checks
+
+## Notes
+
+- The frontend is served by the Flask backend at the root level when deployed.
+- For full project setup and backend details, see the root `README.md`.
