@@ -1,14 +1,147 @@
-﻿<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="DevDestiny visual inspection dashboard built with React and Vite." />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>DevDestiny | Visual Inspection</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniPool | Premium Student Ride Sharing</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+</head>
+<body>
+    <div id="app">
+
+        
+        <!-- Navigation -->
+        <nav class="navbar animate-fade-in">
+            <div class="logo">
+                <span class="logo-text">Uni<span class="clip">Pool</span></span>
+            </div>
+            <div class="nav-links">
+                <a href="#home" id="navHome">Home</a>
+                <a href="#about" id="navAbout">About</a>
+                <a href="#dashboard" id="navDashboard" class="hidden">Dashboard</a>
+                <a href="requests.html" id="navRequests" class="hidden">Requests</a>
+                <a href="payment-settings.html" id="navPayments" class="hidden">Payments</a>
+                <a href="auth.html?mode=login" id="loginBtn" class="btn-outline">Login</a>
+                <div id="hamburgerMenu" class="hamburger hidden" onclick="toggleDrawer()">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <!-- Hero Section -->
+            <section id="home" class="hero">
+                <div class="hero-content animate-up">
+                    <h1>Next-Gen <br><span class="gradient-text">Student Commute.</span></h1>
+                    <p>Experience the most secure, premium, and sustainable ride-pooling network exclusively for university students.</p>
+                    <div class="hero-btns">
+                        <a href="auth.html?mode=signup" class="btn-primary">Get Started</a>
+                        <a href="#about" class="btn-outline">How it Works</a>
+                    </div>
+                </div>
+                <div class="hero-visual animate-up" style="animation-delay: 0.2s">
+                    <div class="glass-card decor-card">
+                        <div class="dots"><span></span><span></span><span></span></div>
+                        <div class="ride-path-visual">
+                            <div class="loc">University Main Gate</div>
+                            <div class="line"></div>
+                            <div class="loc">Innovation Hub</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        <!-- About Section (Always reachable) -->
+        <section id="about" class="about-section glass-card">
+            <h2>About UniPool</h2>
+            <p>UniPool is a student-led initiative to reduce carbon footprint and commuting costs. Exclusive to verified university students, we ensure a safe and trustworthy community for your daily travels.</p>
+            <div class="stats">
+                <div class="stat-item"><h3>1000+</h3><p>Active Students</p></div>
+                <div class="stat-item"><h3>500+</h3><p>Rides Daily</p></div>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="dashboard-section page-container hidden">
+            <header class="dashboard-header animate-up">
+                <div class="user-meta" style="display: flex; align-items: center;">
+                    <img id="mainProfilePhoto" src="https://via.placeholder.com/60" alt="Profile" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-right: 15px; display: none;">
+                    <div>
+                        <h2 id="userNameDisplay">Welcome Back</h2>
+                        <span id="verificationBadge" class="badge">Verification Needed</span>
+                    </div>
+                </div>
+                <div class="dashboard-actions">
+                    <a href="find-ride.html" class="btn-primary">Find a Ride</a>
+                    <a href="offer-ride.html" class="btn-outline">Offer a Ride</a>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <div id="verificationSection" class="glass-card animate-up">
+                    <h3>Community Safety</h3>
+                    <p style="color: var(--text-gray); margin-bottom: 2rem;">Upload your University ID card to access premium rides.</p>
+                    <div class="file-upload-box">
+                        <input type="file" id="vCardInput" class="visually-hidden">
+                        <label for="vCardInput" class="btn-outline" style="width: 100%; text-align: center; cursor: pointer;">Choose ID File</label>
+                        <button class="btn-primary full-width" id="uploadVCardBtn" style="margin-top: 1rem;">Verify Profile</button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Profile Drawer -->
+        <div id="drawerOverlay" class="drawer-overlay" onclick="toggleDrawer()"></div>
+        <div id="profileDrawer" class="drawer">
+            <div class="drawer-header">
+                <h3 id="drawerUserName">Profile Settings</h3>
+                <span class="close" onclick="toggleDrawer()">&times;</span>
+            </div>
+            <div class="drawer-content">
+                <ul class="drawer-links">
+                    <li><a href="javascript:void(0)" onclick="openUpdateProfileModal()">⚙️ Edit Profile</a></li>
+                    <li><a href="requests.html">🚗 My Ride Requests</a></li>
+                    <li><a href="payment-settings.html">💳 Payment Methods</a></li>
+                    <li><a href="javascript:void(0)" id="drawerLogoutBtn" style="color: var(--accent);">🚪 Logout</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Update Profile Modal -->
+        <div id="updateProfileModal" class="modal hidden">
+            <div class="glass-card modal-content animate-up">
+                <span class="close" onclick="closeModal('updateProfileModal')">&times;</span>
+                <h2>Update Profile</h2>
+                <form id="updateProfileForm">
+                    <div class="form-group">
+                        <label>Profile Photo</label>
+                        <input type="file" id="profilePhotoInput" accept="image/*" class="btn-outline" style="width: 100%; border: none;">
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="updateName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="updatePhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label>New Password (Optional)</label>
+                        <input type="password" id="updatePassword" placeholder="Leave blank to keep current">
+                    </div>
+                    <div class="form-group">
+                        <label>UPI ID (for receiving payments)</label>
+                        <input type="text" id="updateUPI" placeholder="yourname@upi">
+                    </div>
+                    <button type="submit" class="btn-primary full-width">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="js/app.js"></script>
+</body>
 </html>
