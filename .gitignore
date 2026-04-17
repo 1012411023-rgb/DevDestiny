@@ -1,1 +1,32 @@
-node_modules
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+.venv/
+
+# Data & Output
+backend/models/*.pkl
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/data/*.json
+!backend/data/.gitkeep
+backend/users.json
+backend/app.db
+backend/static/report_*.pdf
+backend/static/*.jpg
+backend/static/*.png
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+.npm/
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+.vscode/

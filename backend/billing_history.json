@@ -1,0 +1,24 @@
+[
+    {
+        "razorpay_payment_id": "pay_SZmj9jdGNPrkjZ",
+        "razorpay_order_id": "order_SZmiQ0WP90ARKW",
+        "razorpay_signature": "b08b5babb2ff2d1a9f96e2eb8e77894f52d0c5c937e0f479771aedbfc30f39cc",
+        "plan": "premium",
+        "amount": 5000,
+        "currency": "INR",
+        "user_id": "4",
+        "date": "2026-04-05T16:22:31.564892",
+        "status": "success",
+        "id": "tx_2"
+    },
+    {
+        "razorpay_payment_id": "pay_SZErrp1txnR428",
+        "plan": "premium",
+        "amount": 5000,
+        "currency": "INR",
+        "user_id": "2bb97bfa-3f27-4bff-a6d5-b2a4e1fcb336",
+        "date": "2026-04-04T07:15:03.749077",
+        "status": "success",
+        "id": "tx_1"
+    }
+]
