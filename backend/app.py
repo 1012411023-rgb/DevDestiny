@@ -302,66 +302,63 @@ def inspect_api(product_id):
         }
 
         if not is_live:
-            # Update stats
-            stats = get_stats()
-            if product_id not in stats:
-                stats[product_id] = {
-                    "total_scanned": 0,
-                    "total_approved": 0,
-                    "total_defective": 0,
-                }
+            db = next(get_db())
+            
+            # Extract company_id from token
+            token = request.headers.get("Authorization", "").replace("Bearer ", "")
+            company_id = None
+            if token:
+                try:
+                    token_data = jwt.decode(token, app.config["JWT_SECRET"], algorithms=["HS256"])
+                    company_id = token_data["user_id"]
+                except:
+                    pass
 
-            stats[product_id]["total_scanned"] += 1
-            if result.get("pass", False):
-                stats[product_id]["total_approved"] += 1
-            else:
-                stats[product_id]["total_defective"] += 1
+            # Try to find the product/template in DB
+            # If product_id is a string from URL, we might need to handle it
+            # For now, assume it's an ID or name
+            db_product = db.query(models.Product).filter(
+                (models.Product.id == product_id) if product_id.isdigit() else (models.Product.name == product_id)
+            ).first()
+            
+            # Default model accuracy
+            model_accuracy = 98.4
+            db_model_id = None
+            if db_product and db_product.models:
+                db_model_id = db_product.models[0].id
+                model_accuracy = db_product.models[0].accuracy
 
-            save_stats(stats)
+            # Save to DB
+            new_inspection = models.Inspection(
+                company_id=company_id,
+                product_id=db_product.id if db_product else None,
+                model_id=db_model_id,
+                image_path=temp_path,
+                anomaly_score=round(float(result.get("anomaly_score", 0)), 2),
+                status="pass" if result.get("pass", False) else "fail",
+                severity="High" if not result.get("pass", False) else "Low",
+                likely_issue="Surface Discontinuity / Material Anomaly" if not result.get("pass", False) else "Consistent Surface"
+            )
+            db.add(new_inspection)
+            db.commit()
+            db.refresh(new_inspection)
 
-            # --- start DB history logging ---
-            templates = load_json(TEMPLATES_FILE)
-            model_info = next((t for t in templates if t["id"] == product_id), {})
-            model_accuracy = model_info.get("accuracy", 98.4)
-
-            inspections = load_json(INSPECTIONS_FILE)
-            new_entry = {
-                "id": inspection_id,
-                "templateName": product_id,
-                "category": "Detection",
-                "timestamp": datetime.now().isoformat(),
-                "status": "pass" if result.get("pass", False) else "fail",
-                "anomalyScore": round(float(result.get("anomaly_score", 0)), 2),
-                "severity": "High" if not result.get("pass", False) else "Low",
+            result.update({
+                "id": f"INS-{new_inspection.id}",
+                "templateName": db_product.name if db_product else product_id,
+                "category": db_product.category if db_product else "Detection",
                 "modelAccuracy": model_accuracy,
-                "likelyIssue": "Surface Discontinuity / Material Anomaly"
-                if not result.get("pass", False)
-                else "Consistent Surface",
-            }
-            inspections.insert(0, new_entry)
-            save_json(INSPECTIONS_FILE, inspections)
-
-            result.update(
-                {
-                    "id": new_entry["id"],
-                    "templateName": model_info.get("name", product_id),
-                    "category": model_info.get("category", "Detection"),
-                    "modelAccuracy": model_accuracy,
-                    "likelyIssue": new_entry["likelyIssue"],
-                    "severity": new_entry["severity"],
-                }
-            )
-            # --- end DB history logging ---
+                "likelyIssue": new_inspection.likely_issue,
+                "severity": new_inspection.severity,
+            })
         else:
-            result.update(
-                {
-                    "id": inspection_id,
-                    "status": "pass" if result.get("pass", False) else "fail",
-                    "severity": "High" if not result.get("pass", False) else "Low",
-                    "likelyIssue": "Surface Discontinuity" if not result.get("pass", False) else "None",
-                    "anomalyScore": round(float(result.get("anomaly_score", 0)), 2),
-                }
-            )
+            result.update({
+                "id": inspection_id,
+                "status": "pass" if result.get("pass", False) else "fail",
+                "severity": "High" if not result.get("pass", False) else "Low",
+                "likelyIssue": "Surface Discontinuity" if not result.get("pass", False) else "None",
+                "anomalyScore": round(float(result.get("anomaly_score", 0)), 2),
+            })
 
         if os.path.exists(temp_path):
             os.remove(temp_path)
@@ -369,7 +366,6 @@ def inspect_api(product_id):
         return jsonify(result)
     except Exception as e:
         import traceback
-
         traceback.print_exc()
         if os.path.exists(temp_path):
             os.remove(temp_path)
@@ -424,8 +420,19 @@ def auth_signup():
         product_types=data.get("product_types", ""),
     )
     new_comp = crud.create_company(db, company_data)
+    
+    # Create initial free subscription
+    db_sub = models.Subscription(
+        company_id=new_comp.id,
+        plan="Free",
+        start_date=datetime.utcnow(),
+        is_active=True
+    )
+    db.add(db_sub)
+    db.commit()
+
     token = jwt.encode(
-        {"user_id": new_comp.id}, app.config["JWT_SECRET"], algorithm="HS256"
+        {"user_id": new_comp.id, "email": new_comp.email}, app.config["JWT_SECRET"], algorithm="HS256"
     )
     return jsonify({"id": new_comp.id, "email": new_comp.email, "token": token})
 
@@ -439,7 +446,7 @@ def auth_login():
         return jsonify({"error": "Invalid credentials"}), 401
 
     token = jwt.encode(
-        {"user_id": user.id}, app.config["JWT_SECRET"], algorithm="HS256"
+        {"user_id": user.id, "email": user.email}, app.config["JWT_SECRET"], algorithm="HS256"
     )
     return jsonify({"id": user.id, "email": user.email, "name": user.name, "token": token})
 
@@ -465,37 +472,133 @@ def auth_me():
 
 @app.route("/api/templates", methods=["GET"])
 def get_templates():
-    return jsonify(load_json(TEMPLATES_FILE))
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    company_id = None
+    if token:
+        try:
+            token_data = jwt.decode(token, app.config["JWT_SECRET"], algorithms=["HS256"])
+            company_id = token_data["user_id"]
+        except:
+            pass
+    
+    db = next(get_db())
+    query = db.query(models.Product)
+    if company_id:
+        query = query.filter(models.Product.company_id == company_id)
+    
+    products = query.all()
+    templates = []
+    for p in products:
+        templates.append({
+            "id": str(p.id),
+            "name": p.name,
+            "category": p.category,
+            "status": p.status,
+            "referenceImageCount": p.models[0].reference_images_count if p.models else 0,
+            "updatedAt": p.created_at.isoformat()
+        })
+    return jsonify(templates)
 
 
 @app.route("/api/templates", methods=["POST"])
 def create_template():
     data = request.json
-    templates = load_json(TEMPLATES_FILE)
-    new_template = {
-        "id": f"tpl_{int(datetime.now().timestamp())}",
-        "name": data["name"],
-        "category": data["category"],
-        "status": "draft",
-        "referenceImageCount": 0,
-        "updatedAt": datetime.now().isoformat(),
-    }
-    templates.insert(0, new_template)
-    save_json(TEMPLATES_FILE, templates)
-    return jsonify(new_template)
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    company_id = None
+    if token:
+        try:
+            token_data = jwt.decode(token, app.config["JWT_SECRET"], algorithms=["HS256"])
+            company_id = token_data["user_id"]
+        except:
+            pass
+
+    db = next(get_db())
+    new_product = models.Product(
+        name=data["name"],
+        category=data["category"],
+        status="draft",
+        company_id=company_id
+    )
+    db.add(new_product)
+    db.commit()
+    db.refresh(new_product)
+    
+    return jsonify({
+        "id": str(new_product.id),
+        "name": new_product.name,
+        "category": new_product.category,
+        "status": new_product.status,
+        "updatedAt": new_product.created_at.isoformat()
+    })
+
+
+@app.route("/api/stats/dashboard", methods=["GET"])
+def get_dashboard_stats_api():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"error": "No token"}), 401
+    try:
+        data = jwt.decode(token, app.config["JWT_SECRET"], algorithms=["HS256"])
+        company_id = data["user_id"]
+        db = next(get_db())
+        stats = crud.get_dashboard_stats(db, company_id)
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 401
 
 
 @app.route("/api/stats/passfail", methods=["GET"])
 def get_pie_chart_stats():
-    inspections = load_json(INSPECTIONS_FILE)
-    passed = sum(1 for inc in inspections if inc.get("status") == "pass")
-    failed = sum(1 for inc in inspections if inc.get("status") == "fail")
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        company_id = None # Fallback or handle error
+    else:
+        try:
+            data = jwt.decode(token, app.config["JWT_SECRET"], algorithms=["HS256"])
+            company_id = data["user_id"]
+        except:
+            company_id = None
+
+    db = next(get_db())
+    query = db.query(models.Inspection)
+    if company_id:
+        query = query.filter(models.Inspection.company_id == company_id)
+    
+    passed = query.filter(models.Inspection.status == "pass").count()
+    failed = query.filter(models.Inspection.status == "fail").count()
     return jsonify({"passed": passed, "failed": failed})
 
 
 @app.route("/api/inspections", methods=["GET"])
 def get_inspections():
-    return jsonify(load_json(INSPECTIONS_FILE))
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    company_id = None
+    if token:
+        try:
+            token_data = jwt.decode(token, app.config["JWT_SECRET"], algorithms=["HS256"])
+            company_id = token_data["user_id"]
+        except:
+            pass
+    
+    db = next(get_db())
+    query = db.query(models.Inspection)
+    if company_id:
+        query = query.filter(models.Inspection.company_id == company_id)
+    
+    inspections = query.order_by(models.Inspection.created_at.desc()).all()
+    results = []
+    for i in inspections:
+        results.append({
+            "id": f"INS-{i.id}",
+            "templateName": i.product.name if i.product else "Unknown",
+            "category": i.product.category if i.product else "Detection",
+            "timestamp": i.created_at.isoformat(),
+            "status": i.status,
+            "anomalyScore": i.anomaly_score,
+            "severity": i.severity,
+            "likelyIssue": i.likely_issue
+        })
+    return jsonify(results)
 
 
 @app.route("/api/billing/history", methods=["GET"])
@@ -509,9 +612,19 @@ def billing_history_api():
     except Exception as e:
         return jsonify({"error": "Invalid token"}), 401
 
-    history = get_billing_history()
-    user_history = [item for item in history if str(item.get("user_id")) == user_id]
-    return jsonify(user_history)
+    db = next(get_db())
+    history = db.query(models.PaymentHistory).filter(models.PaymentHistory.company_id == user_id).all()
+    results = []
+    for h in history:
+        results.append({
+            "id": h.id,
+            "razorpay_payment_id": h.transaction_id,
+            "date": h.created_at.isoformat(),
+            "amount": h.amount,
+            "status": h.payment_status,
+            "plan": h.plan_type
+        })
+    return jsonify(results)
 
 
 @app.route("/api/billing/create-order", methods=["POST"])
@@ -573,13 +686,39 @@ def save_transaction_api():
             return jsonify({"status": "error", "message": "Payment verification failed"}), 400
 
     data["user_id"] = user_id
-    history = get_billing_history()
-    data["date"] = datetime.now().isoformat()
-    data["status"] = "success"
-    data["id"] = f"tx_{len(history) + 1}"
-    history.insert(0, data)
-    with open(BILLING_HISTORY_FILE, "w") as f:
-        json.dump(history, f, indent=4)
+    
+    db = next(get_db())
+    new_payment = models.PaymentHistory(
+        company_id=int(user_id),
+        amount=data.get("amount", 5000),
+        plan_type=data.get("plan", "premium"),
+        payment_status="success",
+        transaction_id=razorpay_payment_id
+    )
+    db.add(new_payment)
+    
+    # Update company subscription tier
+    company = db.query(models.Company).filter(models.Company.id == int(user_id)).first()
+    if company:
+        company.subscription_tier = data.get("plan", "premium").capitalize()
+        
+        # Update or create active subscription
+        active_sub = db.query(models.Subscription).filter(
+            models.Subscription.company_id == company.id,
+            models.Subscription.is_active == True
+        ).first()
+        if active_sub:
+            active_sub.plan = company.subscription_tier
+        else:
+            new_sub = models.Subscription(
+                company_id=company.id,
+                plan=company.subscription_tier,
+                start_date=datetime.utcnow(),
+                is_active=True
+            )
+            db.add(new_sub)
+            
+    db.commit()
 
     return jsonify({"status": "success", "transaction": data})
 

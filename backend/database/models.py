@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .db import Base
@@ -12,19 +12,28 @@ class Company(Base):
     hashed_password = Column(String, nullable=False)
     company_size = Column(String)
     product_types = Column(String)
+    subscription_tier = Column(String, default="Free") # Free, Pro, Enterprise
+    subscription_status = Column(String, default="Active")
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    payments = relationship("PaymentHistory", foreign_keys="[PaymentHistory.company_id]", back_populates="company")
+    products = relationship("Product", back_populates="company")
+    inspections = relationship("Inspection", back_populates="company")
+    subscriptions = relationship("Subscription", back_populates="company")
+    payments = relationship("PaymentHistory", back_populates="company")
 
 class Product(Base):
     __tablename__ = "products"
 
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"))
-    user_id = Column(Integer, ForeignKey("companies.id"))
     name = Column(String, nullable=False)
     category = Column(String)
+    status = Column(String, default="ready") # ready, draft
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    company = relationship("Company", back_populates="products")
+    models = relationship("Model", back_populates="product")
+    inspections = relationship("Inspection", back_populates="product")
 
 class Model(Base):
     __tablename__ = "models"
@@ -33,66 +42,51 @@ class Model(Base):
     product_id = Column(Integer, ForeignKey("products.id"))
     reference_images_count = Column(Integer)
     model_type = Column(String)
+    accuracy = Column(Float, default=98.4)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    product = relationship("Product", back_populates="models")
+    inspections = relationship("Inspection", back_populates="model")
 
 class Inspection(Base):
     __tablename__ = "inspections"
 
     id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"))
     product_id = Column(Integer, ForeignKey("products.id"))
     model_id = Column(Integer, ForeignKey("models.id"))
     image_path = Column(String)
     anomaly_score = Column(Float)
-    status = Column(String)
+    status = Column(String) # pass, fail
+    severity = Column(String) # Low, Medium, High
+    likely_issue = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-class Result(Base):
-    __tablename__ = "results"
+    company = relationship("Company", back_populates="inspections")
+    product = relationship("Product", back_populates="inspections")
+    model = relationship("Model", back_populates="inspections")
 
-    id = Column(Integer, primary_key=True, index=True)
-    inspection_id = Column(Integer, ForeignKey("inspections.id"))
-    heatmap_path = Column(String)
-    confidence_score = Column(Float)
-
-class Defect(Base):
-    __tablename__ = "defects"
-
-    id = Column(Integer, primary_key=True, index=True)
-    inspection_id = Column(Integer, ForeignKey("inspections.id"))
-    defect_type = Column(String)
-    severity = Column(String)
-    description = Column(String)
-
-class BillingLog(Base):
-    __tablename__ = "billing_logs"
+class Subscription(Base):
+    __tablename__ = "subscriptions"
 
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"))
-    user_id = Column(Integer, ForeignKey("companies.id"))
-    inspections_count = Column(Integer)
-    amount = Column(Float)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    plan = Column(String) # Free, Pro, Enterprise
+    start_date = Column(DateTime, default=datetime.utcnow)
+    end_date = Column(DateTime)
+    is_active = Column(Boolean, default=True)
 
-class ActivityLog(Base):
-    __tablename__ = "activity_logs"
-
-    id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id"))
-    user_id = Column(Integer, ForeignKey("companies.id"))
-    action = Column(String)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    company = relationship("Company", back_populates="subscriptions")
 
 class PaymentHistory(Base):
     __tablename__ = "payment_history"
 
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"))
-    user_id = Column(Integer, ForeignKey("companies.id"))
     amount = Column(Float)
     plan_type = Column(String)
     payment_status = Column(String)
-    payment_method = Column(String)
     transaction_id = Column(String, unique=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    company = relationship("Company", foreign_keys=[company_id], back_populates="payments")
+    company = relationship("Company", back_populates="payments")
