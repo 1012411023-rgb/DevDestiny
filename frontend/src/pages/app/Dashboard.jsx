@@ -40,9 +40,23 @@ export default function Dashboard() {
   const { history } = useInspection();
 
   const [pieData, setPieData] = useState([]);
+  const [stats, setStats] = useState({
+    total_inspections: 0,
+    inspections_last_24h: 0,
+    avg_pass_rate: 0,
+    pass_rate_improvement: 2.4,
+    active_templates: 0,
+    total_templates: 0,
+    anomalies_tracked: 0,
+    requires_review: 0
+  });
 
   useEffect(() => {
-    fetch(`http://${window.location.hostname}:5005/api/stats/passfail`)
+    const token = localStorage.getItem('devdestany_token');
+    const headers = { 'Authorization': `Bearer ${token}` };
+
+    // Fetch Pie Chart Data
+    fetch(`http://${window.location.hostname}:5005/api/stats/passfail`, { headers })
       .then(res => res.json())
       .then(data => {
         setPieData([
@@ -51,13 +65,18 @@ export default function Dashboard() {
         ]);
       })
       .catch(err => console.error(err));
+
+    // Fetch Dashboard Stats
+    fetch(`http://${window.location.hostname}:5005/api/stats/dashboard`, { headers })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) {
+          setStats(data);
+        }
+      })
+      .catch(err => console.error(err));
   }, []);
 
-
-  const activeTemplates = templates.filter(t => t.status === 'ready').length;
-  const passRate = history.length > 0 
-    ? Math.round((history.filter(h => h.status === 'pass').length / history.length) * 100)
-    : 0;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -77,26 +96,26 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Total Inspections" 
-          value={history.length} 
+          value={stats.total_inspections} 
           subtext="Last 24 Hours" 
           icon={Search} 
         />
         <StatCard 
           title="Avg Pass Rate" 
-          value={history.length === 0 ? "—" : `${passRate}%`} 
+          value={`${stats.avg_pass_rate}%`} 
           subtext="Historical Metrics" 
           icon={CheckCircle2} 
-          trend={history.length === 0 ? null : 2.4}
+          trend={stats.pass_rate_improvement}
         />
         <StatCard 
           title="Active Templates" 
-          value={activeTemplates} 
-          subtext={`${templates.length} Total in Library`} 
+          value={stats.active_templates} 
+          subtext={`${stats.total_templates} Total in Library`} 
           icon={Box} 
         />
         <StatCard 
           title="Anomalies Tracked" 
-          value={history.filter(h => h.status === 'fail').length} 
+          value={stats.anomalies_tracked} 
           subtext="Requires Immediate Review" 
           icon={AlertTriangle} 
         />
