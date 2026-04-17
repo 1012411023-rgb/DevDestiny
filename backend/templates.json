@@ -1,0 +1,186 @@
+[
+    {
+        "id": "tpl_1776274895",
+        "name": "Screw",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-15T23:11:35.401972"
+    },
+    {
+        "id": "tpl_1776272494",
+        "name": "Tiles",
+        "category": "Textile",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-15T22:31:34.806327"
+    },
+    {
+        "id": "tpl_1776272227",
+        "name": "Screw",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-15T22:27:07.834430"
+    },
+    {
+        "id": "tpl_1775802066",
+        "name": "screw",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-10T11:51:06.387533"
+    },
+    {
+        "id": "tpl_1775485373",
+        "name": "screws",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-06T19:52:53.345312"
+    },
+    {
+        "id": "tpl_1775443252",
+        "name": "screw",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-06T08:10:52.876395"
+    },
+    {
+        "id": "tpl_1775443178",
+        "name": "screw",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-06T08:09:38.958446"
+    },
+    {
+        "id": "tpl_1775422445",
+        "name": "ash",
+        "category": "Textile",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-06T02:24:05.016613"
+    },
+    {
+        "id": "tpl_1775386437",
+        "name": "Tiles",
+        "category": "Ceramic",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-05T16:23:57.791827"
+    },
+    {
+        "id": "tpl_1775384505",
+        "name": "Tiles",
+        "category": "Ceramic",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-05T15:51:45.725334"
+    },
+    {
+        "id": "tpl_1775280986",
+        "name": "A",
+        "category": "Ceramic",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T11:06:26.161887"
+    },
+    {
+        "id": "tpl_1775277815",
+        "name": "abc",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T10:13:35.667035"
+    },
+    {
+        "id": "tpl_1775276818",
+        "name": "abc",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T09:56:58.000592"
+    },
+    {
+        "id": "tpl_1775276631",
+        "name": "asdx",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T09:53:51.103766"
+    },
+    {
+        "id": "tpl_1775276470",
+        "name": "asdf",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T09:51:10.416308"
+    },
+    {
+        "id": "tpl_1775274232",
+        "name": "test",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T09:13:52.292091"
+    },
+    {
+        "id": "tpl_1775273394",
+        "name": "asd",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T08:59:54.842808"
+    },
+    {
+        "id": "tpl_1775272423",
+        "name": "test",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T08:43:43.724494"
+    },
+    {
+        "id": "tpl_1775272364",
+        "name": "iug",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T08:42:44.828356"
+    },
+    {
+        "id": "tpl_1775272338",
+        "name": "as",
+        "category": "Textile",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T08:42:18.309794"
+    },
+    {
+        "id": "tpl_1775268357",
+        "name": "test",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T07:35:57.455192"
+    },
+    {
+        "id": "tpl_1775267392",
+        "name": "sd",
+        "category": "Textile",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T07:19:52.989432"
+    },
+    {
+        "id": "tpl_1775266926",
+        "name": "test",
+        "category": "Metal",
+        "status": "draft",
+        "referenceImageCount": 0,
+        "updatedAt": "2026-04-04T07:12:06.736739"
+    }
+]

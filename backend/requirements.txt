@@ -1,0 +1,18 @@
+# Dependencies for DevDestany Backend
+
+Flask==2.3.2
+flask-cors
+torch
+torchvision
+opencv-python
+numpy
+Pillow
+openai
+scikit-learn
+scipy
+Werkzeug==2.3.6
+PyJWT
+SQLAlchemy
+passlib
+pydantic
+python-dotenv

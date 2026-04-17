@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevDestany - Few-Shot Visual Inspection</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+        }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 2rem; }
+        .header-section { background: white; padding: 2rem 0; margin-bottom: 2rem; border-bottom: 1px solid #eee; }
+        .drop-zone { border: 2px dashed #ccc; border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: 0.3s; }
+        .drop-zone:hover { border-color: var(--primary-color); background: #f0f7ff; }
+        #preview-calibration img, #preview-test img { max-width: 80px; margin: 5px; border-radius: 4px; }
+        .result-heatmap { max-width: 100%; border-radius: 8px; }
+        .badge-pass { background-color: var(--success-color); }
+        .badge-fail { background-color: var(--danger-color); }
+        .loading-spinner { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="header-section text-center">
+    <h1>DevDestany Visual Inspection</h1>
+    <p class="text-muted">Unsupervised Few-Shot Anomaly Detection for Micro-Manufacturing</p>
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- Calibration Section -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">1. Calibration (Learn "Perfect")</h5>
+                    <p class="text-muted small">Upload 10-20 images of a defect-free product.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Product ID / Category</label>
+                        <input type="text" id="productId" class="form-control" placeholder="e.g., ceramic_tile_A">
+                    </div>
+
+                    <div class="drop-zone" onclick="document.getElementById('calibFiles').click()">
+                        <p id="calib-text">Click to select calibration images</p>
+                        <input type="file" id="calibFiles" multiple accept="image/*" style="display:none" onchange="handleFiles('calib')">
+                        <div id="preview-calibration" class="d-flex flex-wrap"></div>
+                    </div>
+
+                    <button class="btn btn-primary w-100 mt-3" onclick="calibrate()">
+                        <span id="calib-btn-text">Start Calibration</span>
+                        <div class="spinner-border spinner-border-sm loading-spinner" id="calib-spinner"></div>
+                    </button>
+                    <div id="calib-status" class="mt-2 small"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Testing Section -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">2. Testing (Find Defects)</h5>
+                    <p class="text-muted small">Upload an image to check for anomalies.</p>
+                    
+                    <div class="drop-zone" onclick="document.getElementById('testFile').click()">
+                        <p id="test-text">Click to select test image</p>
+                        <input type="file" id="testFile" accept="image/*" style="display:none" onchange="handleFiles('test')">
+                        <div id="preview-test"></div>
+                    </div>
+
+                    <button class="btn btn-success w-100 mt-3" id="inspect-btn" onclick="inspect()" disabled>
+                        Run Inspection
+                    </button>
+
+                    <div id="results-area" class="mt-4" style="display:none">
+                        <hr>
+                        <h6>Inspection Result: <span id="res-status" class="badge"></span></h6>
+                        <p>Anomaly Score: <strong id="res-score"></strong></p>
+                        <div class="text-center">
+                            <label class="small text-muted mb-2">Anomaly Heatmap</label><br>
+                            <img id="res-heatmap" class="result-heatmap" src="" alt="Heatmap">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let calibrationFiles = [];
+    let testFile = null;
+
+    function handleFiles(type) {
+        if (type === 'calib') {
+            const files = document.getElementById('calibFiles').files;
+            calibrationFiles = Array.from(files);
+            const preview = document.getElementById('preview-calibration');
+            preview.innerHTML = '';
+            calibrationFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+            document.getElementById('calib-text').innerText = `${files.length} images selected`;
+        } else {
+            const file = document.getElementById('testFile').files[0];
+            testFile = file;
+            const preview = document.getElementById('preview-test');
+            preview.innerHTML = '';
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+            document.getElementById('test-text').innerText = file.name;
+        }
+    }
+
+    async function calibrate() {
+        const productId = document.getElementById('productId').value;
+        if (!productId || calibrationFiles.length === 0) {
+            alert("Please enter a Product ID and select images.");
+            return;
+        }
+
+        const formData = new FormData();
+        calibrationFiles.forEach(f => formData.append('files', f));
+
+        // UI Updates
+        document.getElementById('calib-btn-text').innerText = "Calibrating...";
+        document.getElementById('calib-spinner').style.display = "inline-block";
+        document.getElementById('calib-status').innerText = "Extracting features and building statistical model...";
+
+        try {
+            const response = await fetch(`/api/products/${productId}/calibrate`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                document.getElementById('calib-status').innerHTML = '<span class="text-success">✅ Calibration Complete! Model is ready.</span>';
+                document.getElementById('inspect-btn').disabled = false;
+            } else {
+                document.getElementById('calib-status').innerText = 'Error: ' + data.message;
+            }
+        } catch (e) {
+            document.getElementById('calib-status').innerText = 'Error: ' + e;
+        } finally {
+            document.getElementById('calib-btn-text').innerText = "Start Calibration";
+            document.getElementById('calib-spinner').style.display = "none";
+        }
+    }
+
+    async function inspect() {
+        const productId = document.getElementById('productId').value;
+        if (!testFile) return;
+
+        const formData = new FormData();
+        formData.append('file', testFile);
+
+        document.getElementById('inspect-btn').innerText = "Inspecting...";
+
+        try {
+            const response = await fetch(`/api/products/${productId}/inspect`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            
+            document.getElementById('results-area').style.display = "block";
+            const statusBadge = document.getElementById('res-status');
+            if (data.pass) {
+                statusBadge.innerText = "PASS";
+                statusBadge.className = "badge badge-pass";
+            } else {
+                statusBadge.innerText = "DEFECT DETECTED";
+                statusBadge.className = "badge badge-fail";
+            }
+            
+            document.getElementById('res-score').innerText = data.anomaly_score.toFixed(2);
+            document.getElementById('res-heatmap').src = `data:image/png;base64,${data.heatmap_base64}`;
+            
+        } catch (e) {
+            alert("Inspection failed: " + e);
+        } finally {
+            document.getElementById('inspect-btn').innerText = "Run Inspection";
+        }
+    }
+</script>
+
+</body>
+</html>

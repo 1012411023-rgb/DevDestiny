@@ -1,45 +1,65 @@
-﻿import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { TemplateProvider } from './context/TemplateContext';
+import { InspectionProvider } from './context/InspectionContext';
 
-function App() {
-  const [count, setCount] = useState(0)
+import AppLayout from './components/layout/AppLayout';
+import Dashboard from './pages/app/Dashboard';
+import AddProduct from './pages/app/AddProduct';
+import Inspection from './pages/app/Inspection';
+import Results from './pages/app/Results';
+import History from './pages/app/History';
+import Billing from './pages/app/Billing';
 
+
+import Login from './pages/auth/Login';
+import Signup from './pages/auth/Signup';
+
+import { Loader } from './components/ui/Loader';
+
+// Simple Protected Route wrapper
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, isAuthLoading } = useAuth();
+  if (isAuthLoading) return <div className="h-screen flex items-center justify-center"><Loader /></div>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return children;
+};
+
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="DevDestiny illustration" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>DevDestiny Dashboard</h1>
-          <p>
-            Inspect and monitor visual quality with a fast React + Vite frontend connected to your Flask backend.
-          </p>
-          <button className="counter" onClick={() => setCount((count) => count + 1)}>
-            Count is {count}
-          </button>
-        </div>
-      </section>
+    <AuthProvider>
+      <TemplateProvider>
+        <InspectionProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Auth Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
 
-      <div className="ticks"></div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <h2>Next steps</h2>
-          <p>Customize the dashboard, wire the backend API, and display quality inspection insights in the UI.</p>
-        </div>
-        <div>
-          <h2>Local development</h2>
-          <p>Run <code>npm run dev</code> and edit <code>src/App.jsx</code> to update app behavior immediately.</p>
-        </div>
-      </section>
-    </>
-  )
+              {/* Protected App Routes */}
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Dashboard />} />
+
+                <Route path="add-product" element={<AddProduct />} />
+                <Route path="inspection" element={<Inspection />} />
+                <Route path="results" element={<Results />} />
+                <Route path="billing" element={<Billing />} />
+
+              </Route>
+
+              {/* Catch all */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </InspectionProvider>
+      </TemplateProvider>
+    </AuthProvider>
+  );
 }
 
-export default App
+
